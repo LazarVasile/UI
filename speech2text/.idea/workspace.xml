@@ -7,12 +7,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="51bdcce4-06bd-4b1c-b7bd-1bc7945fc3d8" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../first/android/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/../first/android/app/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../first/android/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../first/android/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../first/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/../first/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../first/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../first/pubspec.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../first/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/../first/pubspec.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../text_to_speech/text_to_speech/example/flutter_app/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/../text_to_speech/text_to_speech/example/flutter_app/lib/main.dart" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
