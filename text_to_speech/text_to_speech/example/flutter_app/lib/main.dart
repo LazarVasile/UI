@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget{
   Widget build(BuildContext context){
     _speak() async{
       await flutterTts.setLanguage("ro-RO");
-      await flutterTts.speak("ceva");
+      await flutterTts.speak("ce");
     }
     return Container(
       alignment:Alignment.center,
