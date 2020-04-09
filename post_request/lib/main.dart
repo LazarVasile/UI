@@ -3,22 +3,22 @@ import 'dart:io';
 import 'dart:async';
 import 'package:http/http.dart';
 
-main() async {
+main() async{
   String title = 'Harry Potter';
   String question  = 'Who is the enemy of Harry Potter?';
-  String book = await _makeGetRequest(title);
+  String book = await _makeGetRequest();
   print(book);
 
-  String fragment = await _makePostRequest(book, question);
-  print(fragment);
+//  String fragment = await _makePostRequest(book, question);
+//  print(fragment);
 
 
   // print(await _makePostRequest());
 }
 
-Future<String> _makeGetRequest(title) async {
+Future<String> _makeGetRequest() async {
   // make GET request
-  String url = 'http://10.0.2.2:5000/api/v1/resources/books/$title';
+  String url = 'http://10.0.2.2:5000/api/v1/resources/books/all';
   Response response = await get(url);
   // sample info available in response
   // int statusCode = response.statusCode;
@@ -27,6 +27,7 @@ Future<String> _makeGetRequest(title) async {
   String contentType = headers['content-type'];
 
   String json = response.body;
+  print(json);
   // TODO convert json to object...
   // print(statusCode);
   return json;

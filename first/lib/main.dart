@@ -1,19 +1,44 @@
- import 'package:flutter/foundation.dart';
- import 'package:flutter/material.dart';
- import 'package:flutter/scheduler.dart';
- import 'package:speech_recognition/speech_recognition.dart';
 
- void main() {
+
+import 'package:flutter/material.dart';
+ import 'package:speech_recognition/speech_recognition.dart';
+ import 'package:flutter_tts/flutter_tts.dart';
+ import 'package:http/http.dart';
+ import 'dart:convert';
+ import 'dart:async';
+
+
+ void main() async{
    runApp(MyApp());
  }
 
+
+
  class MyApp extends StatelessWidget {
+
+  @override 
+  
+   Future<List<Book>> _getAllBooks() async {
+
+    var data = await get('http://10.0.2.2:5000/api/v1/resources/books/all');
+
+    var jsonData = jsonDecode(data.body);
+
+    List<Book> books = [];
+
+    for(var b in jsonData) {
+      Book book = Book(b['id'], b['title'], b['author']);
+      books.add(book);
+    }
+    print("dsadjsajdsa");
+    print(books.length);
+    return books;
+   }
+
 
    @override
    Widget build(BuildContext context) {
      final title = 'Books list';
-     final List<String> names = ["After", "Harry Potter", "Lord of the rings"];
-     final List<String> authors= ["Anna Todd", "J.K. Rowling", "J.R.R. Tolkein"];
 
          return MaterialApp(
            title: title,
@@ -21,117 +46,227 @@
              appBar: AppBar(
                title: Text(title),
              ),
-             body: ListView.builder(
-               itemCount: names.length,
+             body: Container(
+            child:FutureBuilder(
+            future : _getAllBooks(),
+
+             builder : (BuildContext context, AsyncSnapshot snapshot){
+              if(snapshot.data == null) {
+                return Container(child: Center(child: Text("Loading")));
+              }
+              // else
+              return ListView.builder(
+               itemCount: snapshot.data.length,
                // Let the ListView know how many items it needs to build.
                // Provide a builder function. This is where the magic happens.
                // Convert each item into a widget based on the type of item it is.
-               itemBuilder: (context, index) {
+               itemBuilder: (BuildContext context, int index) {
+                 
 
                  return ListTile(
-                   title: Text(names[index], style: const TextStyle(
+
+                   title: Text(snapshot.data[index].title, style: const TextStyle(
                      fontWeight: FontWeight.bold,
                      fontSize: 20.0,
                    )),
-                   subtitle: Text(authors[index], style: const TextStyle(
+                   subtitle: Text(snapshot.data[index].author, style: const TextStyle(
                      fontWeight: FontWeight.w400,
                      fontSize: 15.0,
 
                    )),
                    trailing: Icon(Icons.keyboard_arrow_right),
-                   onTap: (){
+
+                   onTap:  (){
                      Navigator.push(
                        context,
-                       MaterialPageRoute(builder: (context) => SecondRoute()),
+                       MaterialPageRoute(builder: (context) => VoiceHome(id1 : snapshot.data[index].id, title1 : snapshot.data[index].title, author1 : snapshot.data[index].author)),
                      );
                    } ,
-
                  );
                },
-         ),
+         );
+             },
+         )
+         )
        ),
      );
    }
  }
 
- class SecondRoute extends StatelessWidget {
+ class Book {
+  final int id;
+  final String title;
+  final String author;
+
+  Book(this.id, this.title, this.author);
+}
+
+ class VoiceHome extends StatefulWidget {
+   VoiceHome({Key key, this.id1, this.title1, this.author1});
+   final int id1;
+   final String title1;
+   final String author1;
+   @override
+   _VoiceHomeState createState() => _VoiceHomeState(id : id1, title : title1, author : author1);
+ }
+
+ class _VoiceHomeState extends State<VoiceHome> {
+   _VoiceHomeState({Key key, this.id, this.title, this.author});
+   final int id;
+   final String title;
+   final String author;
+   SpeechRecognition _speechRecognition;
+   final FlutterTts flutterTts = FlutterTts();
+   bool _isAvailable = false;
+   bool _isListening = false;
+
+   String resultText = "";
+   String finalResult = "";
+
+   Future<String> _getResponse(id, question) async {
+     String url = 'http://10.0.2.2:5000/api/v1/resources/books';
+    Map<String, String> headers = {"Content-type": "application/json"};
+
+   // make POST request
+   var data = {"id" : id, "question" : question};
+   var sendData = jsonEncode(data);
+   Response response = await post(url, headers: headers, body: sendData);
+
+   String fragment = response.body;
+  //  print(fragment);x`
+   return fragment;
+
+   }
+   @override
+   void initState() {
+     super.initState();
+     initSpeechRecognizer();
+   }
+   void initSpeechRecognizer() {
+     _speechRecognition = SpeechRecognition();
+
+     _speechRecognition.setAvailabilityHandler(
+           (bool result) => setState(() => _isAvailable = result),
+     );
+
+     _speechRecognition.setRecognitionStartedHandler(
+           () => setState(() => _isListening = true),
+     );
+
+     _speechRecognition.setRecognitionResultHandler(
+           (String speech) => setState(() => resultText = speech),
+     );
+
+     _speechRecognition.setRecognitionCompleteHandler(
+           () => setState(() => _isListening = false),
+     );
+
+     _speechRecognition.activate().then(
+           (result) => setState(() => _isAvailable = result),
+     );
+   }
+
+
    @override
    Widget build(BuildContext context) {
-     String text = "   October arrived, spreading a damp chill over the grounds and into the castle. dlsadsaldlsad sdladl asldas dsall dsaldsal  Madam Pomfrey, the nurse, was kept busy by a sudden spate of colds among the staff and students. Her Pepperup potion worked instantly, though it left the drinker smoking at the ears for several hours afterward. Ginny Weasley, who had been looking pale, was bullied into taking some by Percy. The steam pouring from under her vivid hair gave the impression that her whole head was on fire. Raindrops the size of bullets thundered on the castle windows for days on end; the lake rose, the flower beds turned into muddy streams, and Hagrid's pumpkins swelled to the size of garden sheds. Oliver Wood's enthusiasm for regular training sessions, however, was not dampened, which was why Harry was to be found, late one stormy Saturday afternoon a few days before Halloween, returning to Gryffindor Tower, drenched to the skin and splattered with mud.";
-     double width = MediaQuery.of(context).size.width;
+
+     _speak(String message) async{
+       await flutterTts.setLanguage("ro-RO");
+       await flutterTts.speak(message);
+     }
      return Scaffold(
-       appBar: AppBar(
-         title: Text("Harry Potter"),
+         appBar: AppBar(
+         title: Text(this.title + " written by " + this.author),
        ),
        body: Container(
-         padding: const EdgeInsets.all(16.0),
-         child: new Column(
-           children: <Widget> [
-             new Text(text, style: const TextStyle(
-               fontWeight: FontWeight.w400,
-               fontSize: 18.0,
-             )),
-             new Container(
-               margin: const EdgeInsets.only(top: 40.0),
-               width: width,
-               height: 60,
-               child: new RaisedButton(
-                 onPressed: () {},
-                 child: const Text('Inregistrare vocala!', style: TextStyle(fontSize: 20)),
-                 color: Colors.blue,
-                 textColor: Colors.white,
-                 elevation: 5,
-
-
-
+         color: Colors.cyanAccent[100],
+         child: Column(
+           mainAxisAlignment: MainAxisAlignment.center,
+           crossAxisAlignment: CrossAxisAlignment.center,
+           children: <Widget>[
+             Row(
+               mainAxisAlignment: MainAxisAlignment.center,
+               children: <Widget>[
+                 FloatingActionButton(
+                   heroTag: null,
+                   child: Icon(Icons.cancel),
+                   mini: true,
+                   backgroundColor: Colors.deepOrange,
+                   onPressed: () {
+                     if (_isListening)
+                       _speechRecognition.cancel().then(
+                             (result) => setState(() {
+                           _isListening = result;
+                           resultText = "";
+                         }),
+                       );
+                   },
+                 ),
+                 FloatingActionButton(
+                   heroTag: null,
+                   child: Icon(Icons.mic),
+                   onPressed: () {
+                     if (_isAvailable && !_isListening)
+                       _speechRecognition
+                           .listen(locale: "ro_RO")
+                           .then((result) => print('$result'));
+                   },
+                   backgroundColor: Colors.pink,
+                 ),
+                 FloatingActionButton(
+                   heroTag: null,
+                   child: Icon(Icons.stop),
+                   mini: true,
+                   backgroundColor: Colors.deepPurple,
+                   onPressed: () {
+                     if (_isListening)
+                       _speechRecognition.stop().then(
+                             (result) => setState(() => _isListening = result),
+                       );
+                   },
+                 ),
+               ],
+             ),
+             Container(
+               width: MediaQuery.of(context).size.width * 0.8,
+               decoration: BoxDecoration(
+                 color: Colors.lightGreenAccent,
+                 borderRadius: BorderRadius.circular(6.0),
+               ),
+               padding: EdgeInsets.symmetric(
+                 vertical: 8.0,
+                 horizontal: 12.0,
+               ),
+               child: Text(
+                 resultText,
+                 style: TextStyle(fontSize: 24.0),
                ),
              ),
-           ]
+              Container(
+                alignment:Alignment.center,
+                child: FutureBuilder(
+                future : _getResponse(id, resultText),
+                builder : (BuildContext context, AsyncSnapshot snapshot) {
+                return RaisedButton(
+                child:Text("Apasa pentru raspuns!",
+                style: TextStyle(fontSize: 24.0, color: Colors.white)),
+                onPressed: ()=> {
+//                   apelare post pe result
+//                  finalResult = _makePostRequest(this.id, resultText) as String;
+//                  finalResult = resultText,
+
+                  _speak(snapshot.data),
+
+                },
+                color : Colors.blue,
+              );
+                },
+                ),
+            ),
+           ],
          ),
        ),
      );
    }
  }
 
-
-
-
-
-
-
-
-//import 'package:flutter/material.dart';
-//import 'package:flutter_tts/flutter_tts.dart';
-//
-//void main() => runApp(TheApp());
-//
-//class TheApp extends StatelessWidget{
-//  @override
-//  Widget build(BuildContext context){
-//    return MaterialApp(
-//      home:Scaffold(
-//        body: MyApp(),
-//      ),
-//    );
-//  }
-//}
-//
-//class MyApp extends StatelessWidget{
-//
-//  final FlutterTts flutterTts = FlutterTts();
-//
-//  @override
-//  Widget build(BuildContext context){
-//    _speak() async{
-//      await flutterTts.setLanguage("ro-RO");
-//      await flutterTts.speak("în ce an");
-//    }
-//    return Container(
-//      alignment:Alignment.center,
-//      child:RaisedButton(
-//        child:Text("Apasa"),
-//        onPressed: ()=> _speak(),
-//      ),
-//    );
-//  }
-//}
