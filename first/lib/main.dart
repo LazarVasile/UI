@@ -13,25 +13,32 @@ import 'package:flutter/material.dart';
  }
 
 
+class Book {
+  final String id;
+  final String title;
+  final String author;
+
+  Book(this.id, this.title, this.author);
+}
 
  class MyApp extends StatelessWidget {
 
-  @override 
-  
-   Future<List<Book>> _getAllBooks() async {
 
-    var data = await get('http://10.0.2.2:5000/api/v1/resources/books/all');
+   Future<List<Book>> _getAllBooks() async {
+    var data = await get('http://192.168.0.100:5000/api/v1/resources/books/all');
 
     var jsonData = jsonDecode(data.body);
-
+//    print(jsonData[100]['id'].runtimeType);
+//    print(jsonData.length);
+//    print(jsonData);
     List<Book> books = [];
-
-    for(var b in jsonData) {
-      Book book = Book(b['id'], b['title'], b['author']);
+    for(var i = 0; i < jsonData.length; i++) {
+//      print(b);
+      Book book = Book(jsonData[i]['id'], jsonData[i]['title'], jsonData[i]['author']);
       books.add(book);
     }
-    print("dsadjsajdsa");
-    print(books.length);
+//    print("dsadjsajdsa");
+//    print(books.length);
     return books;
    }
 
@@ -51,10 +58,10 @@ import 'package:flutter/material.dart';
             future : _getAllBooks(),
 
              builder : (BuildContext context, AsyncSnapshot snapshot){
-              if(snapshot.data == null) {
-                return Container(child: Center(child: Text("Loading")));
-              }
-              // else
+               if(snapshot.data == null) {
+                 return Container(child: Center(child: Text("Loading")));
+               }
+               else
               return ListView.builder(
                itemCount: snapshot.data.length,
                // Let the ListView know how many items it needs to build.
@@ -93,17 +100,10 @@ import 'package:flutter/material.dart';
    }
  }
 
- class Book {
-  final int id;
-  final String title;
-  final String author;
-
-  Book(this.id, this.title, this.author);
-}
 
  class VoiceHome extends StatefulWidget {
    VoiceHome({Key key, this.id1, this.title1, this.author1});
-   final int id1;
+   final String id1;
    final String title1;
    final String author1;
    @override
@@ -112,7 +112,7 @@ import 'package:flutter/material.dart';
 
  class _VoiceHomeState extends State<VoiceHome> {
    _VoiceHomeState({Key key, this.id, this.title, this.author});
-   final int id;
+   final String id;
    final String title;
    final String author;
    SpeechRecognition _speechRecognition;
@@ -124,7 +124,7 @@ import 'package:flutter/material.dart';
    String finalResult = "";
 
    Future<String> _getResponse(id, question) async {
-     String url = 'http://10.0.2.2:5000/api/v1/resources/books';
+     String url = 'http://192.168.0.100:5000/api/v1/resources/books';
     Map<String, String> headers = {"Content-type": "application/json"};
 
    // make POST request
@@ -254,7 +254,8 @@ import 'package:flutter/material.dart';
 //                   apelare post pe result
 //                  finalResult = _makePostRequest(this.id, resultText) as String;
 //                  finalResult = resultText,
-
+//                    _speak("Fragmentula  fost găsit!"),
+                  print(snapshot.data),
                   _speak(snapshot.data),
 
                 },
