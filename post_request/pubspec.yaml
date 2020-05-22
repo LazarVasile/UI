@@ -21,6 +21,8 @@ dependencies:
     sdk: flutter
   http: ^0.12.0+4
   get_ip: ^0.4.0
+  flutter_localizations:
+    sdk: flutter
 
 
 

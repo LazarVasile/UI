@@ -1,11 +1,14 @@
 
 
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
  import 'package:speech_recognition/speech_recognition.dart';
  import 'package:flutter_tts/flutter_tts.dart';
  import 'package:http/http.dart';
  import 'dart:convert';
  import 'dart:async';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 
  void main() async{
@@ -25,20 +28,17 @@ class Book {
 
 
    Future<List<Book>> _getAllBooks() async {
-    var data = await get('http://192.168.0.100:5000/api/v1/resources/books/all');
+    var data = await get('http://192.168.0.101:5000/api/v1/resources/books/all');
 
     var jsonData = jsonDecode(data.body);
-//    print(jsonData[100]['id'].runtimeType);
-//    print(jsonData.length);
-//    print(jsonData);
     List<Book> books = [];
     for(var i = 0; i < jsonData.length; i++) {
 //      print(b);
       Book book = Book(jsonData[i]['id'], jsonData[i]['title'], jsonData[i]['author']);
       books.add(book);
     }
-//    print("dsadjsajdsa");
-//    print(books.length);
+
+     print(books[2].title);
     return books;
    }
 
@@ -48,6 +48,7 @@ class Book {
      final title = 'Books list';
 
          return MaterialApp(
+           locale : const Locale("ro", "Ro"),
            title: title,
            home: Scaffold(
              appBar: AppBar(
@@ -122,20 +123,22 @@ class Book {
 
    String resultText = "";
    String finalResult = "";
+   bool pressed = false;
+   bool ok = true;
 
-   Future<String> _getResponse(id, question) async {
-     String url = 'http://192.168.0.100:5000/api/v1/resources/books';
-    Map<String, String> headers = {"Content-type": "application/json"};
+   void _getResponse(id, question) async {
+     String url = 'http://192.168.0.101:5000/api/v1/resources/books';
+     Map<String, String> headers = {"Content-type": "application/json; charset=utf-8"};
 
-   // make POST request
-   var data = {"id" : id, "question" : question};
-   var sendData = jsonEncode(data);
-   Response response = await post(url, headers: headers, body: sendData);
+     // make POST request
+     var data = {"id" : id, "question" : question};
+     var sendData = jsonEncode(data);
+     Response response = await post(url, headers: headers, body: sendData);
 
-   String fragment = response.body;
-  //  print(fragment);x`
-   return fragment;
-
+     String fragment = jsonDecode(response.body);
+     setState(() {
+       finalResult = fragment;
+     });
    }
    @override
    void initState() {
@@ -154,11 +157,11 @@ class Book {
      );
 
      _speechRecognition.setRecognitionResultHandler(
-           (String speech) => setState(() => resultText = speech),
+           (String speech) => setState(() => resultText = speech + "?"),
      );
 
      _speechRecognition.setRecognitionCompleteHandler(
-           () => setState(() => _isListening = false),
+           () => setState(() {_isListening = false;}),
      );
 
      _speechRecognition.activate().then(
@@ -188,7 +191,7 @@ class Book {
                mainAxisAlignment: MainAxisAlignment.center,
                children: <Widget>[
                  FloatingActionButton(
-                   heroTag: null,
+                   heroTag: this.id,
                    child: Icon(Icons.cancel),
                    mini: true,
                    backgroundColor: Colors.deepOrange,
@@ -244,26 +247,54 @@ class Book {
              ),
               Container(
                 alignment:Alignment.center,
-                child: FutureBuilder(
-                future : _getResponse(id, resultText),
-                builder : (BuildContext context, AsyncSnapshot snapshot) {
-                return RaisedButton(
-                child:Text("Apasa pentru raspuns!",
-                style: TextStyle(fontSize: 24.0, color: Colors.white)),
-                onPressed: ()=> {
-//                   apelare post pe result
-//                  finalResult = _makePostRequest(this.id, resultText) as String;
-//                  finalResult = resultText,
-//                    _speak("Fragmentula  fost găsit!"),
-                  print(snapshot.data),
-                  _speak(snapshot.data),
+                child: new RaisedButton(
+                    onPressed: ()=> { //
+                      _getResponse(id, resultText),
 
-                },
-                color : Colors.blue,
-              );
-                },
+                    },
+                  child: Text("Obtine raspuns", style: TextStyle(fontSize: 24.0, color: Colors.white)),
+                  color: Colors.blue,
                 ),
+
+
+//                child: FutureBuilder(
+////                future : _getResponse(id, finalResult),
+//                builder : (BuildContext context, AsyncSnapshot snapshot) {
+//                  if(snapshot.data == null && resultText != "") {
+//                    return Container(child : Center(child: CircularProgressIndicator()));
+//                  }
+//                  else if (ok == true)
+//                return RaisedButton(
+//                child:Text("Apasa pentru raspuns!",
+//                style: TextStyle(fontSize: 24.0, color: Colors.white)),
+//                onPressed: ()=> { //
+//                  _getResponse(id, resultText),
+//                  _speak(finalResult)
+//
+//                },
+//                color : Colors.blue,
+//              );
+//                },
+//                ),
             ),
+
+         Container(
+           alignment:Alignment.center,
+           child: new RaisedButton(
+             onPressed: ()=> { //
+               if (finalResult == ""){
+                 _speak("Vă rugăm să așteptați!")
+               }
+               else
+                 {
+                   _speak(finalResult)
+                 }
+
+             },
+             child: Text("Apasa pentru raspuns", style: TextStyle(fontSize: 24.0, color: Colors.white)),
+             color: Colors.green,
+           ),
+         ),
            ],
          ),
        ),

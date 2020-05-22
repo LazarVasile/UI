@@ -9,13 +9,8 @@ main() async{
   String question  = 'Who is the enemy of Harry Potter?';
 //  String _ip = await _getIpAdress();
 //  print(_ip);
-  var book = await _makeGetRequest();
-  List<dynamic> books = jsonDecode(book);
-//  print(books);
-  print(books.length);
-  for(var i = 0; i < books.length; i++){
-    print(books[i]);
-  }
+  List<dynamic> book = await _makeGetRequest();
+  print(book);
 //  String fragment = await _makePostRequest(book, question);
 //  print(fragment);
 
@@ -24,27 +19,25 @@ main() async{
 }
 
 
-Future<String> _makeGetRequest() async {
+Future<List<dynamic>> _makeGetRequest() async {
   // make GET request
 
   print("Pas1");
   String url = 'http://192.168.0.100:5000/api/v1/resources/books/all';
-  Response response = await get(url);
+  Response response = await get(url, headers: {'Content-Type': 'application/json'});
   // sample info available in response
   // int statusCode = response.statusCode;
 
   Map<String, String> headers = response.headers;
   String contentType = headers['content-type'];
 
-  String json = response.body;
-  const Latin1Codec latin1 = Latin1Codec();
-  var decoded = utf8.encode(json);
-  var encode = utf8.decode(decoded);
+  List<dynamic> json = jsonDecode(utf8.decode(response.bodyBytes));
+
 //  print(encode);
 //  print(json);
   // TODO convert json to object...
   // print(statusCode);
-  return encode;
+  return json;
 }
 
 Future<String> _makePostRequest(book, question) async {
