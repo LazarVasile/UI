@@ -3,6 +3,7 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
  import 'package:speech_recognition/speech_recognition.dart';
  import 'package:flutter_tts/flutter_tts.dart';
  import 'package:http/http.dart';
@@ -28,7 +29,7 @@ class Book {
 
 
    Future<List<Book>> _getAllBooks() async {
-    var data = await get('http://192.168.0.101:5000/api/v1/resources/books/all');
+    var data = await get('http://192.168.0.100:5000/api/v1/resources/books/all');
 
     var jsonData = jsonDecode(data.body);
     List<Book> books = [];
@@ -38,14 +39,14 @@ class Book {
       books.add(book);
     }
 
-     print(books[2].title);
+     print(books[0].title);
     return books;
    }
 
 
    @override
    Widget build(BuildContext context) {
-     final title = 'Books list';
+     final title = 'Listă cărți';
 
          return MaterialApp(
            locale : const Locale("ro", "Ro"),
@@ -87,7 +88,7 @@ class Book {
                    onTap:  (){
                      Navigator.push(
                        context,
-                       MaterialPageRoute(builder: (context) => VoiceHome(id1 : snapshot.data[index].id, title1 : snapshot.data[index].title, author1 : snapshot.data[index].author)),
+                       MaterialPageRoute(builder: (context) => MyBook(id1 : snapshot.data[index].id, title1 : snapshot.data[index].title, author1 : snapshot.data[index].author)),
                      );
                    } ,
                  );
@@ -101,21 +102,127 @@ class Book {
    }
  }
 
+class MyBook extends StatefulWidget{
+  MyBook({Key key, this.id1, this.title1, this.author1});
+  final String id1;
+  final String title1;
+  final String author1;
+
+  @override
+  _MyBookState createState() => _MyBookState(id : id1, title : title1, author : author1);
+
+  
+}
+
+class _MyBookState extends State<MyBook>{
+  _MyBookState({Key key, this.id, this.title, this.author});
+  final String id;
+  final String title;
+  final String author;
+
+  Future<List<String>> _getAllChapters(book_id) async {
+    // print(book_id);
+    var data = await get('http://192.168.0.100:5000/api/v1/resources/books/chapters?id='+book_id);
+
+    var jsonData = jsonDecode(data.body);
+    // print(jsonData);
+    List<String> chapters = [];
+    for(var i = 0; i < jsonData['Chapters'].length; i++) {
+      
+      chapters.add(jsonData['Chapters'][i]);
+    }
+    // print(chapters[0]);
+    return chapters;
+   }
+
+  @override
+   Widget build(BuildContext context) {
+
+         return Scaffold(
+             appBar: AppBar(
+               title: Text("Listă capitole"),
+             ),
+             body:
+            //  body:Row (
+              //  children:[
+            // Container(
+            //   child: Text("Cautare carte:" + this.title),
+            // ),
+             Container(
+            child:FutureBuilder(
+            future : _getAllChapters(this.id),
+
+             builder : (BuildContext context, AsyncSnapshot snapshot){
+               if(snapshot.data == null) {
+                 return Container(child: Center(child: Text("Loading")));
+               }
+               else
+              return ListView.builder(
+               itemCount: snapshot.data.length,
+               // Let the ListView know how many items it needs to build.
+               // Provide a builder function. This is where the magic happens.
+               // Convert each item into a widget based on the type of item it is.
+               itemBuilder: (BuildContext context, int index) {
+                 
+                 if (index == 0){
+                  return ListTile(
+                    title: Text("Căutare fragment în carte", style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20.0,
+                    )),
+                    trailing: Icon(Icons.keyboard_arrow_right),
+                    onTap:  (){
+                     Navigator.push(
+                       context,
+                       MaterialPageRoute(builder: (context) => VoiceHome(id1 : this.id, title1 : this.title, author1 : this.author, chapter1: -1)),
+                     );
+                   } ,
+                   );
+                   
+                 }
+                 else return ListTile(
+
+                   title: Text('Capitolul '+ (index).toString(), style: const TextStyle(
+                     fontWeight: FontWeight.bold,
+                     fontSize: 20.0,
+                   )),
+                   trailing: Icon(Icons.keyboard_arrow_right),
+
+                   onTap:  (){
+                     Navigator.push(
+                       context,
+                       MaterialPageRoute(builder: (context) => VoiceHome(id1 : this.id, title1 : this.title, author1 : this.author, chapter1 : index)),
+                     );
+                   } ,
+                 );
+               },
+         );
+             },
+         )
+         )
+              //  ]),
+       );
+   }
+
+  
+}
 
  class VoiceHome extends StatefulWidget {
-   VoiceHome({Key key, this.id1, this.title1, this.author1});
+   VoiceHome({Key key, this.id1, this.title1, this.author1, this.chapter1});
    final String id1;
    final String title1;
    final String author1;
+   final int chapter1;
    @override
-   _VoiceHomeState createState() => _VoiceHomeState(id : id1, title : title1, author : author1);
+   _VoiceHomeState createState() => _VoiceHomeState(id : id1, title : title1, author : author1, chapter : chapter1);
  }
 
  class _VoiceHomeState extends State<VoiceHome> {
-   _VoiceHomeState({Key key, this.id, this.title, this.author});
+   _VoiceHomeState({Key key, this.id, this.title, this.author, this.chapter});
    final String id;
    final String title;
    final String author;
+   final int chapter;
    SpeechRecognition _speechRecognition;
    final FlutterTts flutterTts = FlutterTts();
    bool _isAvailable = false;
@@ -126,12 +233,12 @@ class Book {
    bool pressed = false;
    bool ok = true;
 
-   void _getResponse(id, question) async {
-     String url = 'http://192.168.0.101:5000/api/v1/resources/books';
+   void _getResponse(id, question, chapter) async {
+     String url = 'http://192.168.0.100:5000/api/v1/resources/books';
      Map<String, String> headers = {"Content-type": "application/json; charset=utf-8"};
 
      // make POST request
-     var data = {"id" : id, "question" : question};
+     var data = {"id" : id, "question" : question, "chapter" : chapter};
      var sendData = jsonEncode(data);
      Response response = await post(url, headers: headers, body: sendData);
 
@@ -249,7 +356,7 @@ class Book {
                 alignment:Alignment.center,
                 child: new RaisedButton(
                     onPressed: ()=> { //
-                      _getResponse(id, resultText),
+                      _getResponse(this.id, resultText, this.chapter),
 
                     },
                   child: Text("Obtine raspuns", style: TextStyle(fontSize: 24.0, color: Colors.white)),
