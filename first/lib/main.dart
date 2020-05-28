@@ -120,13 +120,13 @@ class _MyBookState extends State<MyBook>{
   final String title;
   final String author;
 
-  Future<List<String>> _getAllChapters(book_id) async {
+  Future<List<int>> _getAllChapters(book_id) async {
     // print(book_id);
     var data = await get('http://192.168.0.100:5000/api/v1/resources/books/chapters?id='+book_id);
 
     var jsonData = jsonDecode(data.body);
     // print(jsonData);
-    List<String> chapters = [];
+    List<int> chapters = [];
     for(var i = 0; i < jsonData['Chapters'].length; i++) {
       
       chapters.add(jsonData['Chapters'][i]);
